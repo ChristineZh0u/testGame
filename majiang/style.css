@@ -387,3 +387,89 @@ body::after {
   pointer-events: none;
 }
 .relic-badge:hover .relic-tooltip { display: block; }
+
+/* ===== Mobile responsive ===== */
+@media (max-width: 768px) {
+  body { overflow: auto; height: auto; }
+  #game-container { height: auto; min-height: 100vh; min-height: 100dvh; padding: 1vw; }
+
+  /* Info bars */
+  #info-bar { font-size: 3vw; gap: 8px; padding: 6px 8px; flex-wrap: wrap; }
+  #info-bar #lang-btn { font-size: 3vw !important; }
+  #rogue-bar { font-size: 2.5vw; padding: 4px 8px; flex-wrap: wrap; gap: 4px; }
+
+  /* Tiles */
+  .tile { width: 8vw; height: 11vw; border-radius: 1vw; }
+  .tile .num { font-size: 4.5vw; }
+  .tile .suit-char { font-size: 2.2vw; }
+
+  /* Player hand */
+  .hand { gap: 0.5vw; min-height: 12vw; flex-wrap: wrap; }
+  #hand-row { gap: 2vw; }
+  #hand-0 .tile:hover, #drawn-tile .tile:hover { transform: translateY(-1.5vw); }
+
+  /* Hidden hands (AI) - smaller on mobile */
+  .hidden-hand .tile, .vertical .tile { width: 5vw; height: 7vw; }
+  .vertical .tile .num { font-size: 2.8vw; }
+  .vertical .tile .suit-char { font-size: 1.4vw; }
+
+  /* Side players */
+  .side-player { min-width: 6vw; }
+
+  /* Discard pool */
+  #discard-pool { max-width: 80vw; max-height: 50vh; }
+  .discard-area .tile { width: 6vw; height: 8vw; margin-right: -0.8vw; }
+  .discard-area .tile .num { font-size: 3.5vw; }
+  .discard-area .tile .suit-char { font-size: 1.6vw; }
+  #tiles-remain { font-size: 2.5vw; padding: 1vw 2vw; }
+  #draw-pile { width: 7vw; height: 9vw; }
+  .pile-tile { width: 6vw; height: 8vw; }
+
+  /* Melds */
+  .meld-group .tile { width: 6vw; height: 8vw; }
+  .meld-group .tile .num { font-size: 3.2vw; }
+  .meld-group .tile .suit-char { font-size: 1.5vw; }
+  .vertical-melds .meld-group .tile { width: 4.5vw; height: 6vw; }
+  .vertical-melds .meld-group .tile .num { font-size: 2.5vw; }
+
+  /* Action bar */
+  #action-bar { padding: 8px 4px; gap: 6px; }
+  #action-bar button { padding: 2vw 4vw; font-size: 3.5vw; border-radius: 1.5vw; }
+  #msg-bar { font-size: 3vw; min-height: 4vw; }
+
+  /* Labels */
+  .player-label { font-size: 2.5vw; }
+  .que-tag { font-size: 2.2vw; }
+
+  /* Center message */
+  #center-msg { font-size: 5vw; }
+
+  /* Ting hint */
+  #ting-hint { font-size: 2.8vw; min-height: 3.5vw; }
+
+  /* Speech bubbles */
+  .speech-bubble { font-size: 2.5vw; padding: 1vw 2vw; }
+
+  /* Que select */
+  #que-select { padding: 16px 20px; width: 85vw; }
+  .que-title { font-size: 4.5vw; }
+  .que-counts { font-size: 3vw; }
+  .que-btn { padding: 10px 20px; font-size: 5vw; }
+
+  /* Modal */
+  #modal-content { min-width: unset; width: 85vw; padding: 20px; font-size: 3.5vw; }
+  #modal-content button { padding: 8px 24px; font-size: 3.5vw; }
+
+  /* Rogue */
+  .rogue-panel h1 { font-size: 7vw; }
+  .rogue-panel h2 { font-size: 5vw; }
+  .rogue-panel p { font-size: 3.5vw; }
+  .relic-cards { flex-wrap: wrap; }
+  .relic-card { width: 40vw; }
+  .relic-badge { font-size: 2.5vw; }
+  .relic-label { font-size: 2vw; }
+  .event-btn { font-size: 3.5vw; padding: 8px 16px; }
+
+  /* HP bar */
+  .hp-visual { width: 25vw; height: 8px; }
+}
