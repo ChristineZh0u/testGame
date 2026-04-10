@@ -405,80 +405,83 @@ body::after {
   #top-player .hidden-hand, #left-player .hidden-hand, #right-player .hidden-hand { display: none; }
 
   /* Info bars */
-  #info-bar { font-size: 3vw; gap: 6px; padding: 3px 6px; flex-wrap: wrap; }
-  #info-bar #lang-btn { font-size: 3vw !important; }
-  #rogue-bar { font-size: 2.5vw; padding: 2px 6px; flex-wrap: wrap; gap: 2px; }
+  #info-bar { font-size: 3.5vw; gap: 6px; padding: 4px 6px; flex-wrap: wrap; }
+  #info-bar #lang-btn { font-size: 3.5vw !important; }
+  #rogue-bar { font-size: 3vw; padding: 2px 6px; flex-wrap: wrap; gap: 2px; }
 
-  /* Your hand tiles — big enough to read and tap */
-  .tile { width: 8.5vw; height: 12vw; border-radius: 1vw; }
-  .tile .num { font-size: 5.5vw; }
-  .tile .suit-char { font-size: 2.5vw; }
+  /* Your hand tiles — 奶奶友好大小 */
+  .tile { width: 8.8vw; height: 13vw; border-radius: 1vw; }
+  .tile .num { font-size: 7vw; }
+  .tile .suit-char { font-size: 3.2vw; }
 
   /* Player hand */
-  .hand { gap: 0.3vw; min-height: 0; flex-wrap: nowrap; }
+  .hand { gap: 0.2vw; min-height: 0; flex-wrap: nowrap; }
   #hand-row { gap: 1.5vw; }
-  .tile.tile-lifted { transform: translateY(-2.5vw); }
+  .tile.tile-lifted { transform: translateY(-3vw); }
 
   /* Side players — just labels and melds */
   .side-player { min-width: 2vw; gap: 0; }
 
   /* Discard pool */
-  #discard-pool { max-width: 88vw; max-height: 35vh; padding: 2px; gap: 2px; }
-  .discard-area .tile { width: 6.5vw; height: 8.5vw; margin-right: -1.2vw; }
-  .discard-area .tile .num { font-size: 3.8vw; }
-  .discard-area .tile .suit-char { font-size: 1.6vw; }
-  #tiles-remain { font-size: 2.5vw; padding: 0.5vw 1.5vw; }
+  #discard-pool { max-width: 92vw; max-height: 32vh; padding: 2px; gap: 1px; }
+  .discard-area .tile { width: 7vw; height: 9.5vw; margin-right: -1.5vw; }
+  .discard-area .tile .num { font-size: 5vw; }
+  .discard-area .tile .suit-char { font-size: 2.2vw; }
+  #tiles-remain { font-size: 3vw; padding: 0.5vw 1.5vw; }
   #draw-pile { width: 6vw; height: 8vw; }
   .pile-tile { width: 5.5vw; height: 7.5vw; }
 
   /* Melds */
   .melds { margin: 0.1vw 0; gap: 0.3vw; }
-  .meld-group .tile { width: 6.5vw; height: 8.5vw; }
-  .meld-group .tile .num { font-size: 3.8vw; }
-  .meld-group .tile .suit-char { font-size: 1.6vw; }
-  .vertical-melds .meld-group .tile { width: 4.5vw; height: 6vw; }
-  .vertical-melds .meld-group .tile .num { font-size: 2.5vw; }
+  .meld-group .tile { width: 7vw; height: 9.5vw; }
+  .meld-group .tile .num { font-size: 5vw; }
+  .meld-group .tile .suit-char { font-size: 2.2vw; }
+  .vertical-melds .meld-group .tile { width: 5vw; height: 7vw; }
+  .vertical-melds .meld-group .tile .num { font-size: 3.5vw; }
 
   /* Action bar */
-  #action-bar { padding: 2px 4px; gap: 4px; }
-  #action-bar button { padding: 1.5vw 3.5vw; font-size: 3.5vw; border-radius: 1vw; }
-  #msg-bar { font-size: 3vw; min-height: 3vw; }
+  #action-bar { padding: 2px 4px; gap: 6px; }
+  #action-bar button { padding: 2vw 4vw; font-size: 4.5vw; border-radius: 1.2vw; }
+  #msg-bar { font-size: 3.5vw; min-height: 4vw; }
 
   /* Labels */
-  .player-label { font-size: 2.5vw; padding: 1px 6px; }
-  .que-tag { font-size: 2vw; }
+  .player-label { font-size: 3vw; padding: 2px 8px; }
+  .que-tag { font-size: 2.5vw; }
 
   /* Center message */
-  #center-msg { font-size: 5vw; }
+  #center-msg { font-size: 6vw; }
 
   /* Ting hint */
-  #ting-hint { font-size: 2.8vw; min-height: 2.5vw; }
+  #ting-hint { font-size: 3.5vw; min-height: 3vw; }
 
   /* Speech bubbles */
-  .speech-bubble { font-size: 2.5vw; padding: 0.5vw 1.5vw; }
+  .speech-bubble { font-size: 3vw; padding: 1vw 2vw; }
 
   /* Que select */
   #que-select { padding: 16px 20px; width: 85vw; }
-  .que-title { font-size: 4.5vw; }
-  .que-counts { font-size: 3vw; }
-  .que-btn { padding: 10px 20px; font-size: 5vw; }
+  .que-title { font-size: 5.5vw; }
+  .que-counts { font-size: 3.5vw; }
+  .que-btn { padding: 12px 24px; font-size: 6vw; }
 
   /* Modal */
-  #modal-content { min-width: unset; width: 85vw; padding: 20px; font-size: 3.5vw; max-height: 90vh; max-height: 90dvh; overflow-y: auto; }
-  #modal-content button { padding: 8px 24px; font-size: 3.5vw; }
+  #modal-content { min-width: unset; width: 90vw; padding: 16px; font-size: 4vw; max-height: 90vh; max-height: 90dvh; overflow-y: auto; line-height: 1.5; }
+  #modal-content button { padding: 10px 28px; font-size: 4.5vw; }
 
   /* Rogue */
-  .rogue-panel h1 { font-size: 7vw; }
-  .rogue-panel h2 { font-size: 5vw; }
-  .rogue-panel p { font-size: 3.5vw; }
+  .rogue-panel h1 { font-size: 8vw; }
+  .rogue-panel h2 { font-size: 6vw; }
+  .rogue-panel p { font-size: 4vw; }
   .relic-cards { flex-wrap: wrap; }
-  .relic-card { width: 40vw; }
-  .relic-badge { font-size: 2.5vw; }
-  .relic-label { font-size: 1.8vw; }
-  .event-btn { font-size: 3.5vw; padding: 8px 16px; }
+  .relic-card { width: 42vw; }
+  .relic-card .relic-name { font-size: 4vw; }
+  .relic-card .relic-desc { font-size: 3vw; }
+  .relic-badge { font-size: 3vw; }
+  .relic-label { font-size: 2.5vw; }
+  .relic-tooltip { font-size: 3vw; white-space: normal; max-width: 60vw; }
+  .event-btn { font-size: 4.5vw; padding: 10px 20px; }
 
   /* HP bar */
-  .hp-visual { width: 20vw; height: 6px; }
+  .hp-visual { width: 22vw; height: 8px; }
 
   /* Compact spacing */
   #top-player, #bottom-player { padding: 0; }
