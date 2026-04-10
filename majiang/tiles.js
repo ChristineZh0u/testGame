@@ -36,7 +36,18 @@ function renderTile(t, opts = {}) {
   div.innerHTML = `<span class="num">${NUM_CHARS[t.rank - 1]}</span><span class="suit-char">${SUITS[t.suit].name}</span>`;
   if (opts.dimQue) div.classList.add('que-dim');
   if (opts.faceDown) div.classList.add('face-down');
-  if (opts.onClick) div.addEventListener('click', () => opts.onClick(t));
+  if (opts.onClick) {
+    div.addEventListener('click', (e) => {
+      if ('ontouchstart' in window && !div.classList.contains('tile-lifted')) {
+        e.preventDefault();
+        document.querySelectorAll('.tile-lifted').forEach(el => el.classList.remove('tile-lifted'));
+        div.classList.add('tile-lifted');
+        return;
+      }
+      div.classList.remove('tile-lifted');
+      opts.onClick(t);
+    });
+  }
   return div;
 }
 

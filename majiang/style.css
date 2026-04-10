@@ -149,6 +149,13 @@ body::after {
   transform: translateY(-0.8vw);
   box-shadow: 0 0 16px rgba(0,255,255,0.4), 0 6px 16px rgba(0,0,0,0.4);
 }
+.tile.tile-lifted {
+  transform: translateY(-0.8vw);
+  box-shadow: 0 0 16px rgba(0,255,255,0.4), 0 6px 16px rgba(0,0,0,0.4);
+}
+@media (hover: none) {
+  #hand-0 .tile:hover, #drawn-tile .tile:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+}
 
 /* Hidden hand (AI) */
 .hidden-hand .tile {
@@ -406,7 +413,7 @@ body::after {
   /* Player hand */
   .hand { gap: 0.5vw; min-height: 12vw; flex-wrap: wrap; }
   #hand-row { gap: 2vw; }
-  #hand-0 .tile:hover, #drawn-tile .tile:hover { transform: translateY(-1.5vw); }
+  .tile.tile-lifted { transform: translateY(-2.5vw); }
 
   /* Hidden hands (AI) - smaller on mobile */
   .hidden-hand .tile, .vertical .tile { width: 5vw; height: 7vw; }
