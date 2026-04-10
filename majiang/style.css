@@ -152,6 +152,7 @@ body::after {
 .tile.tile-lifted {
   transform: translateY(-0.8vw);
   box-shadow: 0 0 16px rgba(0,255,255,0.4), 0 6px 16px rgba(0,0,0,0.4);
+  border-color: #0ff !important;
 }
 @media (hover: none) {
   #hand-0 .tile:hover, #drawn-tile .tile:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }

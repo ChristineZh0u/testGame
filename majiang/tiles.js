@@ -42,11 +42,16 @@ function renderTile(t, opts = {}) {
         e.preventDefault();
         document.querySelectorAll('.tile-lifted').forEach(el => el.classList.remove('tile-lifted'));
         div.classList.add('tile-lifted');
+        window._liftedTileId = t.id;
         return;
       }
       div.classList.remove('tile-lifted');
+      window._liftedTileId = null;
       opts.onClick(t);
     });
+    if ('ontouchstart' in window && window._liftedTileId === t.id) {
+      div.classList.add('tile-lifted');
+    }
   }
   return div;
 }
