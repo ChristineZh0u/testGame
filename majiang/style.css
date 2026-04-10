@@ -394,7 +394,7 @@ body::after {
   padding: 4px 8px; border-radius: 4px; font-size: 0.75vw; white-space: nowrap; z-index: 50;
   pointer-events: none;
 }
-.relic-badge:hover .relic-tooltip { display: block; }
+.relic-badge:hover .relic-tooltip, .relic-badge.active .relic-tooltip { display: block; }
 
 /* ===== Mobile responsive - portrait ===== */
 @media (max-width: 768px) and (orientation: portrait) {

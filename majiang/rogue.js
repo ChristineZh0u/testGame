@@ -637,6 +637,11 @@ class RogueGame {
       badges.push(`<span class="relic-badge" style="border-color:rgba(255,0,255,0.4)"><span class="relic-label" style="color:#f0f">${relicName(this._chaosTemp)}(${LANG==='en'?'temp':'暂时'})</span><span class="relic-tooltip">${relicName(this._chaosTemp)}: ${relicDesc(this._chaosTemp)}</span></span>`);
     }
     rd.innerHTML = badges.join('');
+    rd.querySelectorAll('.relic-badge').forEach(b => b.addEventListener('click', () => {
+      const wasActive = b.classList.contains('active');
+      document.querySelectorAll('.relic-badge.active').forEach(el => el.classList.remove('active'));
+      if (!wasActive) b.classList.add('active');
+    }));
     // Streak
     const streak = this.winStreak > 1 ? ` | 🔥${this.winStreak}` : '';
     const entryTable = [10, 20, 50, 100, 500, 1000, 5000, 100000];
