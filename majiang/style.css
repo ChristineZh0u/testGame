@@ -488,7 +488,8 @@ body::after {
 }
 
 /* ===== Mobile responsive - landscape ===== */
-@media (max-height: 500px) and (orientation: landscape) {
+@media (max-height: 450px),
+       (max-height: 768px) and (orientation: landscape) and (hover: none) {
   body { overflow: hidden; height: 100vh; height: 100dvh; }
   #game-container { height: 100vh; height: 100dvh; padding: 0.3vh; gap: 0; }
 
