@@ -389,12 +389,12 @@ body::after {
 }
 .relic-label { font-size: 0.7vw; color: #0ff; }
 .relic-tooltip {
-  display: none; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+  display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   background: rgba(0,0,0,0.95); border: 1px solid rgba(0,255,255,0.4); color: #fff;
-  padding: 4px 8px; border-radius: 4px; font-size: 0.75vw; white-space: nowrap; z-index: 50;
-  pointer-events: none;
+  padding: 10px 14px; border-radius: 8px; font-size: 14px; white-space: normal;
+  max-width: 80vw; z-index: 200; text-align: center; line-height: 1.5;
 }
-.relic-badge:hover .relic-tooltip, .relic-badge.active .relic-tooltip { display: block; }
+.relic-badge.active .relic-tooltip { display: block; }
 
 /* ===== Mobile responsive - portrait ===== */
 @media (max-width: 768px) and (orientation: portrait) {
