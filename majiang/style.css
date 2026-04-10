@@ -410,13 +410,13 @@ body::after {
   #rogue-bar { font-size: 3vw; padding: 2px 6px; flex-wrap: wrap; gap: 2px; }
 
   /* Your hand tiles — 奶奶友好大小 */
-  .tile { width: 8.8vw; height: 13vw; border-radius: 1vw; }
-  .tile .num { font-size: 7vw; }
-  .tile .suit-char { font-size: 3.2vw; }
+  .tile { width: 12vw; height: 16vw; border-radius: 1.2vw; }
+  .tile .num { font-size: 9vw; }
+  .tile .suit-char { font-size: 4vw; }
 
-  /* Player hand */
-  .hand { gap: 0.2vw; min-height: 0; flex-wrap: nowrap; }
-  #hand-row { gap: 1.5vw; }
+  /* Player hand — two rows */
+  .hand { gap: 1vw; min-height: 0; flex-wrap: wrap; justify-content: center; }
+  #hand-row { gap: 2vw; flex-wrap: wrap; justify-content: center; }
   .tile.tile-lifted { transform: translateY(-3vw); }
 
   /* Side players — just labels and melds */
