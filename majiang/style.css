@@ -493,8 +493,8 @@ body::after {
   body { overflow: hidden; height: 100vh; height: 100dvh; }
   #game-container { height: 100vh; height: 100dvh; padding: 0; gap: 0; }
 
-  /* Hide AI hands to save space — they're face-down anyway */
-  #top-player .hand, #left-player .hand, #right-player .hand { display: none; }
+  /* Hide only face-down AI hands to save space — revealed hands still show */
+  #top-player .hidden-hand, #left-player .hidden-hand, #right-player .hidden-hand { display: none; }
 
   /* Info bars — single compact line */
   #info-bar { font-size: 2.8vh; gap: 8px; padding: 2px 8px; }
