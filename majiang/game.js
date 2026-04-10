@@ -737,9 +737,16 @@ class MajiangGame {
     this.showMsg('⏩ 快进中... 再按一次直接结束');
   }
 
-  delay() { return this._fastMode ? 30 : 500; }
-  aiDelay() { return this._fastMode ? 30 : 800 + Math.random()*600; }
-  flyDur() { return this._fastMode ? 50 : 350; }
+  delay() { return this._fastMode ? 30 : this._speedUp ? 150 : 500; }
+  aiDelay() { return this._fastMode ? 30 : this._speedUp ? 100 : 800 + Math.random()*600; }
+  flyDur() { return this._fastMode ? 50 : this._speedUp ? 100 : 350; }
+
+  toggleSpeed() {
+    this._speedUp = !this._speedUp;
+    const btn = document.getElementById('btn-speed');
+    btn.textContent = this._speedUp ? '🐇快速' : '🐢正常';
+    btn.style.opacity = this._speedUp ? '1' : '0.6';
+  }
 
   actionChameleon() {
     SFX.click();
