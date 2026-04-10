@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Roguelike Pool</title>
+<style>
+  *{margin:0;padding:0}
+  body{background:#111;display:flex;justify-content:center;align-items:center;height:100vh;font-family:monospace}
+  canvas{cursor:crosshair}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+canvas.width=900; canvas.height=580;
+
+const T={x:50,y:70,w:800,h:400};
+const RAIL=25, BASE_POCKET_R=22, BALL_R=10, SUBSTEPS=4;
+const RAIL_BOUNCE=0.75, BALL_BOUNCE=0.96, MIN_V=0.02;
+
+const pockets=[
+  {x:T.x+RAIL-3,y:T.y+RAIL-3},{x:T.x+T.w/2,y:T.y+4},{x:T.x+T.w-RAIL+3,y:T.y+RAIL-3},
+  {x:T.x+RAIL-3,y:T.y+T.h-RAIL+3},{x:T.x+T.w/2,y:T.y+T.h-4},{x:T.x+T.w-RAIL+3,y:T.y+T.h-RAIL+3},
+];
+
+const COLORS={1:'#f5d442',2:'#2255cc',3:'#cc2222',4:'#6622aa',5:'#ee7722',6:'#228833',7:'#882222',8:'#111',
+  9:'#f5d442',10:'#2255cc',11:'#cc2222',12:'#6622aa',13:'#ee7722',14:'#228833',15:'#882222'};
+
+const RARITY_COST={common:10,uncommon:25,rare:50,legendary:80};
+let rerollCost=15;
+const RARITY={common:{color:'#8aaa8a',border:'#5a7a5a'},uncommon:{color:'#4a9aff',border:'#2a6acc'},
+  rare:{color:'#c84aff',border:'#8a2acc'},legendary:{color:'#ff9a2a',border:'#cc7a1a'}};
+
+// --- STATE ---
+let round=1,hp=3,maxHp=3,gold=0,shotsLeft=0,maxShots=5;
+let friction=0.992,powerMult=1,ballCount=6;
+let phase='play',upgrades=[],particles=[];
+let speedUp=false,pocketShrink=0;
+let balls=[],cueBall=null,aiming=false,mouse={x:0,y:0};
+let shooting=false,score=0,pocketed=[],message='',msgTimer=0,placingCue=false,shotTimer=0;
+let activeMutators=[],obstacles=[];
+
+let UL={explosion:0,power:0,shots:0,pockets:0,guide:0,maxhp:0,armor:0,magnet:0,multiball:0};
+let guideMult=1,POCKET_R_BONUS=0;
+
+function getPocketR(){return BASE_POCKET_R+POCKET_R_BONUS-pocketShrink}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function showMsg(t){message=t;msgTimer=120}
+
+// --- MUTATORS ---
+const MUTATORS=[
+  {name:'Slippery Felt',desc:'Less friction',apply(){friction=0.996}},
+  {name:'Sticky Felt',desc:'More friction',apply(){friction=0.985}},
+  {name:'Tiny Pockets',desc:'Pockets shrink',apply(){pocketShrink=5}},
+  {name:'Bumper Ball',desc:'A bouncing obstacle',apply(){
+    balls.push({x:T.x+RAIL+100+Math.random()*(T.w-RAIL*2-200),
+      y:T.y+RAIL+50+Math.random()*(T.h-RAIL*2-100),
+      vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,r:BALL_R+4,num:-1,bumper:true});}},
+  {name:'Obstacle',desc:'A wall appears',apply(){obstacles.push({
+    x:T.x+250+Math.random()*300,y:T.y+RAIL+50+Math.random()*(T.h-RAIL*2-100),w:8,h:60+Math.random()*60});}},
+];
+
+// --- TIERED UPGRADES ---
+function getUpgradePool(){
+  let p=[];
+  if(UL.explosion===0) p.push({id:'explosion',name:'Explosive Cue',icon:'\u{1F4A3}',desc:'Cue explodes on first hit',rarity:'uncommon',apply(){UL.explosion=1}});
+  else if(UL.explosion===1) p.push({id:'explosion',name:'Chain Reaction',icon:'\u{1F4A3}',desc:'Hit balls also explode',rarity:'rare',apply(){UL.explosion=2}});
+  else if(UL.explosion===2) p.push({id:'explosion',name:'Mega Blast',icon:'\u{1F4A3}',desc:'2x explosion radius',rarity:'legendary',apply(){UL.explosion=3}});
+  if(UL.power<3) p.push({id:'power',name:'Power Up',icon:'\u{1F4AA}',desc:'+25% shot power',rarity:UL.power<1?'common':'uncommon',apply(){UL.power++;powerMult+=0.25}});
+  if(UL.shots<4) p.push({id:'shots',name:'Extra Shot',icon:'\u{1F50B}',desc:'+1 shot per round',rarity:'common',apply(){UL.shots++;maxShots++}});
+  if(UL.pockets<3) p.push({id:'pockets',name:'Big Pockets',icon:'\u{1F9F2}',desc:'Pockets grow',rarity:UL.pockets<1?'common':UL.pockets<2?'uncommon':'rare',apply(){UL.pockets++;POCKET_R_BONUS+=3}});
+  if(UL.guide<3) p.push({id:'guide',name:'Guide Line',icon:'\u{1F3AF}',desc:UL.guide===0?'Longer aim guide':UL.guide===1?'Unlocks bounce preview':'Max guide length',rarity:UL.guide<1?'common':'uncommon',apply(){UL.guide++;guideMult+=0.5}});
+  if(UL.maxhp<3) p.push({id:'maxhp',name:'Max HP Up',icon:'\u{2764}',desc:'+1 max HP',rarity:UL.maxhp<1?'uncommon':'rare',apply(){UL.maxhp++;maxHp++;hp++}});
+  if(UL.armor===0) p.push({id:'armor',name:'Armor',icon:'\u{1F6E1}',desc:'No HP loss on empty rounds',rarity:'uncommon',apply(){UL.armor=1}});
+  else if(UL.armor===1) p.push({id:'armor',name:'Regeneration',icon:'\u{1F6E1}',desc:'Heal 1 HP on round clear',rarity:'rare',apply(){UL.armor=2}});
+  if(UL.magnet===0) p.push({id:'magnet',name:'Pocket Magnet',icon:'\u{1F9F2}',desc:'Slow balls drift to pockets',rarity:'rare',apply(){UL.magnet=1}});
+  else if(UL.magnet===1) p.push({id:'magnet',name:'Strong Magnet',icon:'\u{1F9F2}',desc:'Stronger pocket pull',rarity:'legendary',apply(){UL.magnet=2}});
+  if(hp<maxHp) p.push({id:'heal',name:'Heal',icon:'\u{2764}',desc:'+1 HP',rarity:'common',apply(){hp=Math.min(hp+1,maxHp)}});
+  if(ballCount>3) p.push({id:'fewer',name:'Fewer Balls',icon:'\u{1F3B1}',desc:'-1 ball next round',rarity:'common',apply(){ballCount--}});
+  if(UL.multiball<3) p.push({id:'multiball',name:'More Balls',icon:'\u{1F3B1}',desc:'+2 balls on table per round',rarity:UL.multiball<1?'common':'uncommon',apply(){UL.multiball++;ballCount+=2}});
+  return p;
+}
+
+function pickUpgrades(){
+  let pool=getUpgradePool();
+  let weighted=[];
+  for(let u of pool){let w=u.rarity==='common'?5:u.rarity==='uncommon'?3:u.rarity==='rare'?2:1;for(let i=0;i<w;i++)weighted.push(u)}
+  upgrades=[];let picked=new Set();
+  for(let i=0;i<3&&weighted.length;i++){
+    let att=0;while(att<50){let idx=Math.floor(Math.random()*weighted.length);let u=weighted[idx];
+      if(!picked.has(u.id)){picked.add(u.id);upgrades.push(u);break}att++}}
+}
+
+function spawnRound(){
+  balls=[];pocketed=[];obstacles=[];activeMutators=[];
+  friction=0.992;pocketShrink=0;shotsLeft=maxShots;
+  placingCue=false;shooting=false;speedUp=false;
+  cueBall={x:T.x+180,y:T.y+T.h/2,vx:0,vy:0,r:BALL_R,num:0};
+  balls.push(cueBall);
+  let count=Math.min(ballCount+Math.floor(round/2),15);
+  let nums=[];for(let i=1;i<=15;i++)nums.push(i);
+  nums.sort(()=>Math.random()-0.5);nums=nums.slice(0,count);
+  let sx=T.x+550,sy=T.y+T.h/2,row=0,col=0,maxCol=0;
+  for(let i=0;i<nums.length;i++){
+    balls.push({x:sx+row*(BALL_R*2+0.5),y:sy+(col-maxCol/2)*(BALL_R*2+0.5),vx:0,vy:0,r:BALL_R,num:nums[i]});
+    col++;if(col>maxCol){col=0;row++;maxCol++}}
+  if(round>=2){let mc=Math.min(1+Math.floor(round/3),3);let mp=[...MUTATORS].sort(()=>Math.random()-0.5);
+    for(let i=0;i<mc;i++){activeMutators.push(mp[i]);mp[i].apply()}}
+  phase='play';
+  showMsg('Round '+round+(activeMutators.length?' - '+activeMutators.map(m=>m.name).join(', '):''));
+}
+
+function endRound(){
+  if(pocketed.length===0){
+    if(UL.armor>=1){showMsg('Armor saved you!')}
+    else{hp--;showMsg('No balls pocketed! -1 HP')}
+    if(hp<=0){phase='gameover';showMsg('GAME OVER');return}
+  } else if(UL.armor>=2){hp=Math.min(hp+1,maxHp)}
+  gold+=pocketed.length*5+round*2;score+=pocketed.length*10;round++;
+  pickUpgrades();phase='upgrade';
+}
+
+function allStopped(){return balls.every(b=>b.vx===0&&b.vy===0)}
+function nearPocket(b){let pr=getPocketR();for(let p of pockets)if(dist(b,p)<pr+BALL_R+18)return true;return false}
+function spawnParticles(x,y,color,n){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*3;
+  particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:25+Math.random()*20,color,r:2+Math.random()*2})}}
+
+function doExplosion(x,y,radius){
+  spawnParticles(x,y,'#ff8800',25);spawnParticles(x,y,'#ffcc00',15);
+  for(let k of balls){if(k.num===0||k.bumper)continue;
+    let ex=k.x-x,ey=k.y-y,ed=Math.hypot(ex,ey);
+    if(ed<radius&&ed>0){let force=(radius-ed)/radius*10;k.vx+=(ex/ed)*force;k.vy+=(ey/ed)*force}}
+}
+
+function stepPhysics(){
+  let pr=getPocketR();
+  for(let b of balls){b.x+=b.vx/SUBSTEPS;b.y+=b.vy/SUBSTEPS}
+  // Magnet: slow balls drift toward nearest pocket
+  if(UL.magnet>0){let str=UL.magnet===1?0.02:0.06;
+    for(let b of balls){if(b.num<=0||b.bumper)continue;let spd=Math.hypot(b.vx,b.vy);if(spd>1)continue;
+      let best=null,bd=Infinity;for(let p of pockets){let d=dist(b,p);if(d<bd){bd=d;best=p}}
+      if(best&&bd<80){let dx=best.x-b.x,dy=best.y-b.y,d=Math.hypot(dx,dy);b.vx+=dx/d*str;b.vy+=dy/d*str}}}
+  // Pockets
+  for(let i=balls.length-1;i>=0;i--){let b=balls[i];if(b.bumper)continue;
+    for(let p of pockets){if(dist(b,p)<pr){
+      spawnParticles(b.x,b.y,b.num===0?'#fff':COLORS[b.num]||'#888',10);
+      if(b.num===0){balls.splice(i,1);showMsg('Scratch! -1 shot');shotsLeft=Math.max(0,shotsLeft-1);placingCue=true;cueBall=null}
+      else{pocketed.push(b.num);balls.splice(i,1);score+=10;gold+=5;showMsg('Pocketed #'+b.num+'! +10')}break}}}
+  // Rails
+  const left=T.x+RAIL,right=T.x+T.w-RAIL,top=T.y+RAIL,bottom=T.y+T.h-RAIL;
+  for(let b of balls){let np=nearPocket(b);
+    if(!np){if(b.x-b.r<left){b.x=left+b.r;b.vx=Math.abs(b.vx)*RAIL_BOUNCE}
+      if(b.x+b.r>right){b.x=right-b.r;b.vx=-Math.abs(b.vx)*RAIL_BOUNCE}
+      if(b.y-b.r<top){b.y=top+b.r;b.vy=Math.abs(b.vy)*RAIL_BOUNCE}
+      if(b.y+b.r>bottom){b.y=bottom-b.r;b.vy=-Math.abs(b.vy)*RAIL_BOUNCE}}
+    if(b.x-b.r<T.x){b.x=T.x+b.r;b.vx=Math.abs(b.vx)*0.3}
+    if(b.x+b.r>T.x+T.w){b.x=T.x+T.w-b.r;b.vx=-Math.abs(b.vx)*0.3}
+    if(b.y-b.r<T.y){b.y=T.y+b.r;b.vy=Math.abs(b.vy)*0.3}
+    if(b.y+b.r>T.y+T.h){b.y=T.y+T.h-b.r;b.vy=-Math.abs(b.vy)*0.3}}
+  // Obstacles
+  for(let b of balls){for(let o of obstacles){
+    if(b.x+b.r>o.x&&b.x-b.r<o.x+o.w&&b.y+b.r>o.y&&b.y-b.r<o.y+o.h){
+      let ox=(b.x-(o.x+o.w/2))/(o.w/2),oy=(b.y-(o.y+o.h/2))/(o.h/2);
+      if(Math.abs(ox)>Math.abs(oy))b.vx*=-RAIL_BOUNCE;else b.vy*=-RAIL_BOUNCE}}}
+  // Ball-ball collisions
+  let explosionQueue=[];
+  for(let i=0;i<balls.length;i++){for(let j=i+1;j<balls.length;j++){
+    let a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),minD=a.r+b.r;
+    if(d<minD&&d>0.001){
+      let nx=dx/d,ny=dy/d,overlap=(minD-d)/2;
+      let aW=b.bumper?0:1,bW=a.bumper?0:1;
+      a.x-=nx*overlap*aW;a.y-=ny*overlap*aW;b.x+=nx*overlap*bW;b.y+=ny*overlap*bW;
+      let dvx=a.vx-b.vx,dvy=a.vy-b.vy,dot=dvx*nx+dvy*ny;
+      if(dot>0){if(!a.bumper){a.vx-=dot*nx*BALL_BOUNCE;a.vy-=dot*ny*BALL_BOUNCE}
+        if(!b.bumper){b.vx+=dot*nx*BALL_BOUNCE;b.vy+=dot*ny*BALL_BOUNCE}}
+      // Explosion logic
+      let expR=UL.explosion>=3?160:100;
+      if(UL.explosion>=1&&(a.num===0||b.num===0)&&!a.exploded&&!b.exploded){
+        let cx=a.num===0?a.x:b.x,cy=a.num===0?a.y:b.y;
+        explosionQueue.push({x:cx,y:cy,r:expR});
+        if(a.num===0)a.exploded=true;else b.exploded=true}
+      // Chain explosion: any ball with .chainExplode hitting another
+      if(UL.explosion>=2){
+        if(a.chainExplode&&!b.chainExplode&&b.num!==0){explosionQueue.push({x:b.x,y:b.y,r:expR*0.7});b.chainExplode=true}
+        if(b.chainExplode&&!a.chainExplode&&a.num!==0){explosionQueue.push({x:a.x,y:a.y,r:expR*0.7});a.chainExplode=true}}
+    }}}
+  for(let e of explosionQueue){doExplosion(e.x,e.y,e.r);
+    if(UL.explosion>=2){for(let b of balls){if(b.num<=0||b.bumper)continue;
+      let d=Math.hypot(b.x-e.x,b.y-e.y);if(d<e.r)b.chainExplode=true}}}
+}
+
+function update(){
+  if(msgTimer>0)msgTimer--;
+  for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.life--;if(p.life<=0)particles.splice(i,1)}
+  if(phase!=='play')return;
+  if(placingCue){
+    // Still need to let other balls finish moving
+    let othersMoving=false;
+    for(let b of balls){if(b.vx!==0||b.vy!==0)othersMoving=true}
+    if(othersMoving){
+      let sf=speedUp?8:1;
+      for(let f=0;f<sf;f++){
+        for(let s=0;s<SUBSTEPS;s++)stepPhysics();
+        for(let b of balls){b.vx*=friction;b.vy*=friction;let mv=speedUp?0.08:MIN_V;if(Math.hypot(b.vx,b.vy)<mv){b.vx=0;b.vy=0}}}
+    } else {
+      shooting=false;shotTimer=0;speedUp=false;
+      let obj=balls.filter(b=>b.num>0&&!b.bumper);
+      if(obj.length===0){placingCue=false;endRound();return}
+      if(shotsLeft<=0){placingCue=false;endRound();return}
+    }
+    return}
+  // Speed up: run multiple full physics+friction frames
+  let simFrames=speedUp?8:1;
+  for(let f=0;f<simFrames;f++){
+    for(let s=0;s<SUBSTEPS;s++)stepPhysics();
+    for(let b of balls){b.vx*=friction;b.vy*=friction;let mv=speedUp?0.08:MIN_V;if(Math.hypot(b.vx,b.vy)<mv){b.vx=0;b.vy=0}}
+  }
+  let moving=false;
+  for(let b of balls){if(b.vx!==0||b.vy!==0)moving=true}
+  if(!moving)speedUp=false;
+  // Safety: force stop after timeout to prevent stuck balls
+  if(shooting){shotTimer=(shotTimer||0)+1;if(shotTimer>600){
+    for(let b of balls){b.vx=0;b.vy=0}moving=false;shotTimer=0}}
+  if(shooting&&!moving){shooting=false;shotTimer=0;
+    if(!cueBall&&!placingCue)placingCue=true;
+    let obj=balls.filter(b=>b.num>0&&!b.bumper);
+    if(obj.length===0)endRound();else if(shotsLeft<=0)endRound()}
+}
+
+function drawTable(){
+  ctx.fillStyle='#5c3a1e';ctx.fillRect(T.x-12,T.y-12,T.w+24,T.h+24);
+  ctx.fillStyle='#2a7a3a';ctx.fillRect(T.x,T.y,T.w,T.h);
+  ctx.fillStyle='#1a8a3a';ctx.fillRect(T.x+RAIL,T.y+RAIL,T.w-RAIL*2,T.h-RAIL*2);
+  let pr=getPocketR();
+  for(let p of pockets){ctx.beginPath();ctx.arc(p.x,p.y,pr,0,Math.PI*2);ctx.fillStyle='#0a0a0a';ctx.fill();
+    ctx.beginPath();ctx.arc(p.x,p.y,pr+2,0,Math.PI*2);ctx.strokeStyle='#3a2a10';ctx.lineWidth=3;ctx.stroke()}
+  for(let o of obstacles){ctx.fillStyle='#4a3520';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.strokeStyle='#6a5530';ctx.lineWidth=2;ctx.strokeRect(o.x,o.y,o.w,o.h)}
+}
+
+function drawBall(b){
+  ctx.beginPath();ctx.arc(b.x+2,b.y+2,b.r,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fill();
+  ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+  if(b.bumper){ctx.fillStyle='#ff6600';ctx.fill();ctx.strokeStyle='#ff9944';ctx.lineWidth=2;ctx.stroke();return}
+  if(b.num===0){ctx.fillStyle='#fff';ctx.fill();
+    if(UL.explosion>=1){ctx.beginPath();ctx.arc(b.x,b.y,b.r+4,0,Math.PI*2);ctx.strokeStyle='rgba(255,100,0,0.4)';ctx.lineWidth=2;ctx.stroke()}
+    return}
+  ctx.fillStyle=b.num>8?'#fff':COLORS[b.num];ctx.fill();
+  if(b.num>8){ctx.beginPath();ctx.arc(b.x,b.y,b.r,-0.8,0.8);ctx.fillStyle=COLORS[b.num];ctx.fill();
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,Math.PI-0.8,Math.PI+0.8);ctx.fillStyle=COLORS[b.num];ctx.fill()}
+  ctx.beginPath();ctx.arc(b.x,b.y,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle='#000';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.num,b.x,b.y+0.5);
+}
+
+function drawHUD(){
+  ctx.fillStyle='#222';ctx.fillRect(0,0,canvas.width,55);
+  ctx.fillStyle='#fff';ctx.font='bold 16px monospace';ctx.textAlign='left';
+  ctx.fillText('Round '+round,15,22);ctx.font='14px monospace';ctx.fillText('Score: '+score,15,42);
+  for(let i=0;i<maxHp;i++){ctx.fillStyle=i<hp?'#e94560':'#333';ctx.fillText('\u2665',150+i*22,22)}
+  ctx.fillStyle='#aaa';ctx.fillText('Shots: '+shotsLeft+'/'+maxShots,150,42);
+  ctx.fillStyle='#f5d442';ctx.fillText('Gold: '+gold,320,22);
+  if(activeMutators.length){ctx.fillStyle='#ff8844';ctx.font='12px monospace';ctx.fillText(activeMutators.map(m=>m.name).join(' | '),320,42)}
+  // Upgrade icons
+  ctx.font='11px monospace';ctx.fillStyle='#aaa';let ux=500;
+  for(let k in UL){if(UL[k]>0){ctx.fillText(k+':'+UL[k],ux,22);ux+=70}}
+  // Speed up hint
+  if(shooting){ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='13px monospace';ctx.textAlign='center';
+    ctx.fillText(speedUp?'>> Fast Forward >>':'Click to speed up',canvas.width/2,T.y+T.h+50)}
+  // Pocketed
+  ctx.textAlign='left';ctx.fillStyle='#aaa';ctx.font='12px monospace';ctx.fillText('Pocketed:',T.x,T.y+T.h+25);
+  for(let i=0;i<pocketed.length;i++){ctx.beginPath();ctx.arc(T.x+80+i*22,T.y+T.h+22,7,0,Math.PI*2);ctx.fillStyle=COLORS[pocketed[i]]||'#111';ctx.fill()}
+  if(msgTimer>0&&!shooting){ctx.fillStyle='rgba(255,255,255,'+Math.min(msgTimer/30,1)+')';ctx.font='18px monospace';ctx.textAlign='center';ctx.fillText(message,canvas.width/2,T.y+T.h+50)}
+}
+
+function drawUpgradeScreen(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#f5d442';ctx.font='bold 28px monospace';ctx.textAlign='center';
+  ctx.fillText('Round '+(round-1)+' Complete!',canvas.width/2,80);
+  ctx.fillStyle='#aaa';ctx.font='16px monospace';
+  ctx.fillText('Pocketed: '+pocketed.length,canvas.width/2,115);
+  ctx.fillStyle='#f5d442';ctx.fillText('Gold: '+gold,canvas.width/2,140);
+  ctx.fillStyle='#ccc';ctx.font='15px monospace';ctx.fillText('Buy an upgrade:',canvas.width/2,168);
+  for(let i=0;i<upgrades.length;i++){
+    let u=upgrades[i],r=RARITY[u.rarity],cost=RARITY_COST[u.rarity];
+    let bx=canvas.width/2-310+i*215,by=185,bw=200,bh=175;
+    let hover=mouse.x>bx&&mouse.x<bx+bw&&mouse.y>by&&mouse.y<by+bh;
+    let canAfford=gold>=cost;
+    ctx.fillStyle=hover&&canAfford?'#1a2a2e':'#141a1e';ctx.fillRect(bx,by,bw,bh);
+    ctx.strokeStyle=canAfford?r.border:'#333';ctx.lineWidth=hover&&canAfford?3:2;ctx.strokeRect(bx,by,bw,bh);
+    ctx.globalAlpha=canAfford?1:0.4;
+    // Rarity label
+    ctx.fillStyle=r.color;ctx.font='bold 11px monospace';ctx.fillText(u.rarity.toUpperCase(),bx+bw/2,by+22);
+    // Icon + name
+    ctx.fillStyle='#fff';ctx.font='bold 15px monospace';ctx.fillText(u.icon+' '+u.name,bx+bw/2,by+52);
+    // Level indicator
+    let lvl=UL[u.id]||0;
+    if(u.id in UL&&u.id!=='heal'&&u.id!=='fewer'){
+      ctx.font='12px monospace';ctx.fillStyle='#888';
+      let dots='';for(let d=0;d<4;d++)dots+=d<=lvl?'\u25C9':'\u25CB';
+      ctx.fillText(dots,bx+bw/2,by+75)}
+    // Desc
+    ctx.fillStyle='#bbb';ctx.font='13px monospace';ctx.fillText(u.desc,bx+bw/2,by+105);
+    // Cost
+    ctx.fillStyle=canAfford?'#f5d442':'#aa4444';ctx.font='bold 14px monospace';
+    ctx.fillText(cost+' gold',bx+bw/2,by+140);
+    ctx.globalAlpha=1;
+    // Rarity glow
+    if(canAfford&&(u.rarity==='legendary'||u.rarity==='rare')){
+      ctx.shadowColor=r.color;ctx.shadowBlur=hover?15:8;
+      ctx.strokeStyle=r.color;ctx.lineWidth=1;ctx.strokeRect(bx+2,by+2,bw-4,bh-4);ctx.shadowBlur=0}
+  }
+  // Reroll button
+  let rbx=canvas.width/2-60,rby=380,rbw=120,rbh=35;
+  let rHover=mouse.x>rbx&&mouse.x<rbx+rbw&&mouse.y>rby&&mouse.y<rby+rbh;
+  let canReroll=gold>=rerollCost;
+  ctx.fillStyle=rHover&&canReroll?'#2a3a2e':'#1a1a1e';ctx.fillRect(rbx,rby,rbw,rbh);
+  ctx.strokeStyle=canReroll?'#5a8a5a':'#333';ctx.lineWidth=2;ctx.strokeRect(rbx,rby,rbw,rbh);
+  ctx.globalAlpha=canReroll?1:0.4;
+  ctx.fillStyle='#fff';ctx.font='bold 13px monospace';ctx.fillText('\u{1F3B2} Reroll '+rerollCost+'g',rbx+rbw/2,rby+22);
+  ctx.globalAlpha=1;
+  // Skip button
+  let sbx=canvas.width/2-40,sby=425,sbw=80,sbh=28;
+  let sHover=mouse.x>sbx&&mouse.x<sbx+sbw&&mouse.y>sby&&mouse.y<sby+sbh;
+  ctx.fillStyle=sHover?'#2a2a2e':'#1a1a1e';ctx.fillRect(sbx,sby,sbw,sbh);
+  ctx.strokeStyle='#444';ctx.lineWidth=1;ctx.strokeRect(sbx,sby,sbw,sbh);
+  ctx.fillStyle='#888';ctx.font='12px monospace';ctx.fillText('Skip',sbx+sbw/2,sby+18);
+}
+
+function drawGameOver(){
+  ctx.fillStyle='rgba(0,0,0,0.9)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#e94560';ctx.font='bold 36px monospace';ctx.textAlign='center';ctx.fillText('GAME OVER',canvas.width/2,180);
+  ctx.fillStyle='#fff';ctx.font='20px monospace';ctx.fillText('Final Score: '+score,canvas.width/2,240);
+  ctx.fillText('Rounds Survived: '+(round-1),canvas.width/2,275);
+  // Show acquired upgrades
+  ctx.fillStyle='#aaa';ctx.font='14px monospace';let uy=320;
+  for(let k in UL){if(UL[k]>0){ctx.fillText(k+' Lv'+UL[k],canvas.width/2,uy);uy+=20}}
+  ctx.fillStyle='#666';ctx.font='16px monospace';ctx.fillText('Click to restart',canvas.width/2,uy+30);
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(phase==='upgrade'){drawUpgradeScreen();return}
+  if(phase==='gameover'){drawGameOver();return}
+  drawTable();
+  for(let b of balls)drawBall(b);
+  for(let p of particles){ctx.globalAlpha=p.life/45;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill()}
+  ctx.globalAlpha=1;
+  // Cue stick + guide
+  if(aiming&&cueBall&&!shooting&&!placingCue){
+    let dx=mouse.x-cueBall.x,dy=mouse.y-cueBall.y,d=Math.hypot(dx,dy);
+    if(d>1){
+      let shotX=-dx/d,shotY=-dy/d,stickX=dx/d,stickY=dy/d;
+      // Guide line: starts long, shrinks each round, guide upgrade extends it
+      let baseGuide=Math.max(80,350-round*25)+guideMult*60;
+      let hitBall=null,hitDist=Infinity;
+      for(let b of balls){if(b===cueBall||b.bumper)continue;
+        let bx=b.x-cueBall.x,by=b.y-cueBall.y,proj=bx*shotX+by*shotY;if(proj<0)continue;
+        let perpD2=(bx-proj*shotX)**2+(by-proj*shotY)**2,minD=BALL_R*2;
+        if(perpD2<minD*minD){let cd=proj-Math.sqrt(minD*minD-perpD2);if(cd>0&&cd<hitDist){hitDist=cd;hitBall=b}}}
+      let guideLen=hitBall?Math.min(hitDist,baseGuide):baseGuide;
+      ctx.beginPath();ctx.moveTo(cueBall.x,cueBall.y);ctx.lineTo(cueBall.x+shotX*guideLen,cueBall.y+shotY*guideLen);
+      ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.stroke();
+      // Only show deflection lines if guide upgrade level >= 2
+      if(hitBall&&hitDist<=baseGuide){
+        let cx=cueBall.x+shotX*hitDist,cy=cueBall.y+shotY*hitDist;
+        ctx.beginPath();ctx.arc(cx,cy,BALL_R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.stroke();
+        if(UL.guide>=2||round<=3){
+          let ndx=hitBall.x-cx,ndy=hitBall.y-cy,nd=Math.hypot(ndx,ndy);
+          if(nd>0.1){let nnx=ndx/nd,nny=ndy/nd;
+            ctx.beginPath();ctx.moveTo(hitBall.x,hitBall.y);ctx.lineTo(hitBall.x+nnx*80,hitBall.y+nny*80);
+            ctx.strokeStyle='rgba(255,200,50,0.35)';ctx.lineWidth=1.5;ctx.stroke();
+            let dot2=shotX*nnx+shotY*nny,cdx=shotX-dot2*nnx,cdy=shotY-dot2*nny,cd2=Math.hypot(cdx,cdy);
+            if(cd2>0.01){cdx/=cd2;cdy/=cd2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+cdx*60,cy+cdy*60);
+              ctx.strokeStyle='rgba(150,200,255,0.25)';ctx.lineWidth=1;ctx.stroke()}}
+        }
+        ctx.beginPath();ctx.arc(hitBall.x,hitBall.y,BALL_R+2,0,Math.PI*2);ctx.strokeStyle='rgba(255,200,50,0.3)';ctx.lineWidth=1;ctx.stroke()}
+      let power=Math.min(d,200),gap=BALL_R+5+power*0.4;
+      let sx=cueBall.x+stickX*gap,sy=cueBall.y+stickY*gap;
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+stickX*160,sy+stickY*160);
+      ctx.strokeStyle='#d4a84b';ctx.lineWidth=6;ctx.stroke();ctx.strokeStyle='#8b6914';ctx.lineWidth=4;ctx.stroke();
+      ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#5599cc';ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(T.x+T.w+15,T.y,18,200);
+      ctx.fillStyle='hsl('+(120-power*0.6)+',80%,45%)';ctx.fillRect(T.x+T.w+17,T.y+200-power,14,power);
+    }
+  }
+  if(placingCue&&phase==='play'){ctx.beginPath();ctx.arc(mouse.x,mouse.y,BALL_R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;ctx.stroke()}
+  drawHUD();
+}
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+
+canvas.addEventListener('mousedown',e=>{
+  mouse.x=e.offsetX;mouse.y=e.offsetY;
+  if(phase==='gameover'){
+    round=1;hp=3;maxHp=3;gold=0;score=0;maxShots=5;powerMult=1;ballCount=6;
+    POCKET_R_BONUS=0;guideMult=1;friction=0.992;rerollCost=15;
+    for(let k in UL)UL[k]=0;
+    spawnRound();return}
+  if(phase==='upgrade'){
+    // Upgrade cards
+    for(let i=0;i<upgrades.length;i++){let bx=canvas.width/2-310+i*215,by=185,bw=200,bh=175;
+      if(mouse.x>bx&&mouse.x<bx+bw&&mouse.y>by&&mouse.y<by+bh){
+        let cost=RARITY_COST[upgrades[i].rarity];
+        if(gold>=cost){gold-=cost;upgrades[i].apply();rerollCost=15;spawnRound()}return}}
+    // Reroll button
+    let rbx=canvas.width/2-60,rby=380,rbw=120,rbh=35;
+    if(mouse.x>rbx&&mouse.x<rbx+rbw&&mouse.y>rby&&mouse.y<rby+rbh){
+      if(gold>=rerollCost){gold-=rerollCost;rerollCost+=10;pickUpgrades()}return}
+    // Skip button
+    let sbx=canvas.width/2-40,sby=425,sbw=80,sbh=28;
+    if(mouse.x>sbx&&mouse.x<sbx+sbw&&mouse.y>sby&&mouse.y<sby+sbh){rerollCost=15;spawnRound();return}
+    return}
+  // Click to speed up while balls moving
+  if(shooting&&!allStopped()){speedUp=true;return}
+  if(placingCue){
+    // Don't place cue while other balls are still moving — speed up instead
+    let othersMoving=balls.some(b=>b.vx!==0||b.vy!==0);
+    if(othersMoving){speedUp=true;return}
+    let px=Math.max(T.x+RAIL+BALL_R,Math.min(mouse.x,T.x+250));
+    let py=Math.max(T.y+RAIL+BALL_R,Math.min(mouse.y,T.y+T.h-RAIL-BALL_R));
+    cueBall={x:px,y:py,vx:0,vy:0,r:BALL_R,num:0};balls.push(cueBall);placingCue=false;return}
+  if(cueBall&&!shooting&&allStopped()&&shotsLeft>0)aiming=true;
+});
+canvas.addEventListener('mousemove',e=>{mouse.x=e.offsetX;mouse.y=e.offsetY});
+canvas.addEventListener('mouseup',e=>{
+  if(aiming&&cueBall){let dx=cueBall.x-e.offsetX,dy=cueBall.y-e.offsetY,d=Math.hypot(dx,dy);
+    if(d>30){let power=Math.min(d,200)*0.12*powerMult,nx=dx/d,ny=dy/d;
+      cueBall.vx=nx*power;cueBall.vy=ny*power;cueBall.exploded=false;cueBall.chainExplode=false;
+      // Reset chain flags on all balls
+      for(let b of balls)b.chainExplode=false;
+      shooting=true;shotsLeft--}}
+  aiming=false;
+});
+
+spawnRound();loop();
+</script>
+</body>
+</html>

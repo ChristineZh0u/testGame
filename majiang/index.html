@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>霓虹雀馆 · Neon Sparrow House</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-container">
+  <div id="info-bar">
+    <span id="round-info">🀄 霓虹雀馆</span>
+    <span id="turn-info">等待开始</span>
+    <span id="tiles-left">剩余: 0</span>
+    <span id="score-info">分数: 0</span>
+    <button id="lang-btn" onclick="setLang(LANG==='zh'?'en':'zh'); if(rogue.state==='title') rogue.showTitle();" style="font-size:1vw;padding:2px 8px;cursor:pointer;background:rgba(255,255,255,0.1);border:1px solid rgba(0,255,255,0.3);color:#0ff;border-radius:4px;">EN</button>
+  </div>
+  <div id="rogue-bar">
+    <span class="floor-info" id="floor-info">楼层: 1F</span>
+    <span class="hp-bar">💰 <span id="hp-text">$50</span> <span class="hp-visual"><span class="hp-fill" id="hp-fill" style="width:100%"></span></span></span>
+    <span id="relics-display"></span>
+  </div>
+
+  <div id="top-player" class="player-area">
+    <div class="player-label" id="label-2"><span id="name-2">北</span> <span id="que-2" class="que-tag"></span> <span id="status-2"></span></div>
+    <div id="bubble-2" class="speech-bubble"></div>
+    <div class="hand hidden-hand" id="hand-2"></div>
+    <div class="melds" id="melds-2"></div>
+  </div>
+
+  <div id="middle-row">
+    <div id="left-player" class="player-area side-player">
+      <div class="player-label" id="label-3"><span id="name-3">西</span> <span id="que-3" class="que-tag"></span> <span id="status-3"></span></div>
+      <div id="bubble-3" class="speech-bubble"></div>
+      <div class="hand hidden-hand vertical" id="hand-3"></div>
+      <div class="melds vertical-melds" id="melds-3"></div>
+    </div>
+
+    <div id="center">
+      <div id="discard-pool">
+        <div class="discard-area" id="discards-2"></div>
+        <div class="discard-area" id="discards-3"></div>
+        <div class="discard-area" id="discards-1"></div>
+        <div class="discard-area" id="discards-0"></div>
+        <div id="tiles-remain">剩余 0</div>
+        <div id="draw-pile">
+          <div class="pile-tile"></div>
+          <div class="pile-tile"></div>
+          <div class="pile-tile"></div>
+        </div>
+      </div>
+      <div id="center-msg"></div>
+    </div>
+
+    <div id="right-player" class="player-area side-player">
+      <div class="melds vertical-melds" id="melds-1"></div>
+      <div class="hand hidden-hand vertical" id="hand-1"></div>
+      <div class="player-label" id="label-1"><span id="name-1">东</span> <span id="que-1" class="que-tag"></span> <span id="status-1"></span></div>
+      <div id="bubble-1" class="speech-bubble"></div>
+    </div>
+  </div>
+
+  <div id="bottom-player" class="player-area">
+    <div class="melds" id="melds-0"></div>
+    <div id="hand-row">
+      <div class="hand" id="hand-0"></div>
+      <div class="hand" id="drawn-tile"></div>
+    </div>
+    <div class="player-label" id="label-0"><span id="name-0">南 (你)</span> <span id="que-0" class="que-tag"></span> <span id="status-0"></span></div>
+    <div id="ting-hint"></div>
+  </div>
+
+  <div id="action-bar">
+    <div id="msg-bar"></div>
+    <button id="btn-start" style="display:none" onclick="game.actionHu()">开始</button>
+    <button id="btn-hu" class="action-btn hu-btn" style="display:none" onclick="game.actionHu()">胡</button>
+    <button id="btn-gang" class="action-btn gang-btn" style="display:none" onclick="game.actionGang()">杠</button>
+    <button id="btn-peng" class="action-btn peng-btn" style="display:none" onclick="game.actionPeng()">碰</button>
+    <button id="btn-pass" class="action-btn pass-btn" style="display:none" onclick="game.actionPass()">过</button>
+    <button id="btn-swap" class="action-btn" style="display:none" onclick="game.actionSwap()">🔄换牌</button>
+    <button id="btn-fast" class="action-btn" style="display:none" onclick="game.actionFast()">⏩快进</button>
+    <button id="btn-chameleon" class="action-btn" style="display:none" onclick="game.actionChameleon()">🦎变色</button>
+  </div>
+
+  <div id="que-select" style="display:none">
+    <div class="que-title">定缺 — 选择要缺的花色</div>
+    <div class="que-counts" id="que-counts"></div>
+    <div class="que-options">
+      <button onclick="game.selectQue('wan')" class="que-btn wan-btn">万</button>
+      <button onclick="game.selectQue('tiao')" class="que-btn tiao-btn">条</button>
+      <button onclick="game.selectQue('tong')" class="que-btn tong-btn">饼</button>
+    </div>
+  </div>
+</div>
+
+<div id="fly-tile" style="display:none"></div>
+<div id="modal" style="display:none"><div id="modal-content"></div></div>
+<div id="rogue-screen" style="display:none"></div>
+
+<script src="tiles.js"></script>
+<script src="i18n.js"></script>
+<script src="sound.js"></script>
+<script src="game.js"></script>
+<script src="rogue.js"></script>
+</body>
+</html>

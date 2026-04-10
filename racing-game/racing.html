@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Road Racer</title>
+<style>*{margin:0}body{background:#000;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+C.width=800;C.height=600;
+const W=C.width,H=C.height;
+
+// Road is drawn line by line from bottom of screen to horizon
+// Each line maps to a distance z from the camera
+// z = d*H / (line - horizon)  where d is a depth constant
+
+const HORIZON=H*0.4; // horizon y position (240)
+const DEPTH=100;      // depth scaling
+const ROADW=0.4;      // road half-width as fraction of screen width
+const SEGL=200;
+const N=2000;
+
+let road=[],totalLen,cars=[];
+let px=0,spd=0,pos=0;
+let score=0,lives=3,over=false,hi=+localStorage.getItem('rhi5')||0;
+let keys={};
+const MAXS=SEGL*60;
+
+document.addEventListener('keydown',e=>{keys[e.key]=true;e.preventDefault()});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+
+function build(){
+  road=[];
+  function add(n,c,h){for(let i=0;i<n;i++)road.push({curve:c,hill:h?Math.sin(i/n*Math.PI)*h:0})}
+  add(50,0,0);add(50,0.8,0);add(30,0,1.5);add(80,-1.2,0);add(30,0,-1);
+  add(60,1.5,0.8);add(50,0,0);add(70,-0.8,0);add(40,0,2);add(50,1.2,-0.8);
+  add(50,0,0);add(60,-1.5,0);add(40,0,0);
+  while(road.length<N)road.push({curve:0,hill:0});
+  totalLen=N*SEGL;
+
+  // scenery
+  for(let i=0;i<N;i++){
+    road[i].tree=null;
+    if(Math.random()<0.25){
+      road[i].tree={side:Math.random()>0.5?1:-1,off:0.55+Math.random()*0.4,t:Math.floor(Math.random()*3)};
+    }
+  }
+
+  cars=[];
+  for(let i=0;i<30;i++){
+    cars.push({
+      off:-0.15+Math.floor(Math.random()*4)*0.1,
+      z:Math.random()*totalLen,
+      spd:MAXS*0.15+Math.random()*MAXS*0.25,
+      col:['#e44','#4ae','#ea4','#4e4','#e4e','#ee4'][Math.floor(Math.random()*6)]
+    });
+  }
+}
+build();
+
+function update(dt){
+  if(over)return;
+  if(keys.ArrowUp)spd+=MAXS*0.7*dt;
+  else if(keys.ArrowDown)spd-=MAXS*2*dt;
+  else spd-=MAXS*0.2*dt;
+  spd=Math.max(0,Math.min(MAXS,spd));
+
+  const f=spd/MAXS;
+  if(keys.ArrowLeft)px-=0.8*dt*f;
+  if(keys.ArrowRight)px+=0.8*dt*f;
+  if(Math.abs(px)>ROADW+0.05)spd=Math.max(0,spd-MAXS*dt);
+  px=Math.max(-0.7,Math.min(0.7,px));
+
+  pos+=spd*dt;while(pos>=totalLen)pos-=totalLen;
+
+  const si=Math.floor(pos/SEGL)%N;
+  px+=road[si].curve*f*dt*0.4;
+
+  cars.forEach(c=>{
+    c.z+=c.spd*dt;while(c.z>=totalLen)c.z-=totalLen;
+    let d=c.z-pos;if(d>totalLen/2)d-=totalLen;if(d<-totalLen/2)d+=totalLen;
+    if(Math.abs(d)<SEGL*0.5&&Math.abs(c.off-px)<0.08){
+      spd*=0.1;lives--;c.z=(c.z+SEGL*5)%totalLen;
+      if(lives<=0){over=true;if(score>hi){hi=score;localStorage.setItem('rhi5',hi)}}
+    }
+  });
+  score+=spd*dt*0.004;
+}
+
+function render(){
+  // sky
+  const sk=ctx.createLinearGradient(0,0,0,HORIZON);
+  sk.addColorStop(0,'#114');sk.addColorStop(1,'#49d');
+  ctx.fillStyle=sk;ctx.fillRect(0,0,W,HORIZON);
+
+  // ground fill
+  ctx.fillStyle='#395';ctx.fillRect(0,HORIZON,W,H-HORIZON);
+
+  const baseSeg=Math.floor(pos/SEGL)%N;
+  let cx=0,cdx=0; // curve accumulator
+  let hillY=0;
+
+  // We draw from the horizon down to the bottom of the screen
+  // For each screen line y (from bottom to horizon), compute z distance
+  // Then figure out which road segment that corresponds to
+
+  // Pre-compute projected road points for each segment distance
+  const points=[];
+  for(let n=1;n<=200;n++){
+    const i=(baseSeg+n)%N;
+    const seg=road[i];
+    const z=n*SEGL-(pos%SEGL);
+    if(z<=0)continue;
+
+    // screen y from z: y = horizon + depth*H/z
+    const screenY=HORIZON+DEPTH*H/z;
+    if(screenY<=HORIZON||screenY>H)continue;
+
+    // road width at this distance
+    const scale=DEPTH/z;
+    const rw=ROADW*W*scale*10;
+
+    hillY+=seg.hill*scale*5;
+    cx+=cdx;cdx+=seg.curve*scale*50;
+
+    const screenX=W/2+cx-px*rw*2.5;
+
+    points.push({x:screenX,y:screenY+hillY,w:rw,i,seg,scale,z});
+  }
+
+  // sort by y ascending (far to near = top to bottom)
+  points.sort((a,b)=>a.y-b.y);
+
+  // draw from far (top) to near (bottom)
+  for(let j=0;j<points.length-1;j++){
+    const p=points[j],p2=points[j+1];
+    const alt=Math.floor(p.i/3)%2;
+    const yh=p2.y-p.y+1;
+
+    // grass
+    ctx.fillStyle=alt?'#395':'#3a6';
+    ctx.fillRect(0,p.y,W,yh);
+
+    // rumble
+    poly(p.x,p.y,p.w*1.2,p2.x,p2.y,p2.w*1.2,alt?'#c22':'#ddd');
+    // road
+    poly(p.x,p.y,p.w,p2.x,p2.y,p2.w,alt?'#666':'#707070');
+    // dashes
+    if(!alt){
+      const d1=p.w*0.03,d2=p2.w*0.03;
+      for(let l=-1;l<=1;l++)poly(p.x+p.w*l*0.5,p.y,d1,p2.x+p2.w*l*0.5,p2.y,d2,'#fff');
+    }
+
+    // scenery
+    const tr=road[p.i].tree;
+    if(tr&&p.w>4){
+      const sx=p.x+p.w*tr.side*tr.off*3;
+      const sz=p.w*0.6;
+      if(tr.t===0){ctx.fillStyle='#530';ctx.fillRect(sx-sz*0.06,p.y-sz,sz*0.12,sz);ctx.fillStyle='#2a5';ctx.beginPath();ctx.arc(sx,p.y-sz*1.1,sz*0.35,0,Math.PI*2);ctx.fill()}
+      else if(tr.t===1){ctx.fillStyle='#777';ctx.beginPath();ctx.arc(sx,p.y-sz*0.15,sz*0.2,0,Math.PI*2);ctx.fill()}
+      else{ctx.fillStyle='#3a4';ctx.beginPath();ctx.arc(sx,p.y-sz*0.1,sz*0.15,0,Math.PI*2);ctx.fill()}
+    }
+
+    // traffic
+    cars.forEach(c=>{
+      let d=c.z-pos;if(d>totalLen/2)d-=totalLen;if(d<-totalLen/2)d+=totalLen;
+      if(d<0)return;
+      const cn=Math.floor(d/SEGL);
+      const pi=(baseSeg+cn)%N;
+      if(pi!==p.i)return;
+      const carX=p.x+p.w*(c.off-px)*25;
+      const cw=p.w*0.15,ch=cw*1.5;
+      if(cw<1)return;
+      ctx.fillStyle=c.col;ctx.fillRect(carX-cw,p.y-ch,cw*2,ch);
+      ctx.fillStyle='rgba(180,230,255,0.5)';ctx.fillRect(carX-cw*0.6,p.y-ch*0.9,cw*1.2,ch*0.18);
+      ctx.fillStyle='#222';ctx.fillRect(carX-cw*1.1,p.y-ch*0.7,cw*0.2,ch*0.2);ctx.fillRect(carX+cw*0.9,p.y-ch*0.7,cw*0.2,ch*0.2);
+    });
+  }
+
+  // player car
+  const tilt=keys.ArrowLeft?-0.06:keys.ArrowRight?0.06:0;
+  ctx.save();ctx.translate(W/2,H-80);ctx.rotate(tilt);
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(0,42,50,8,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0af';ctx.beginPath();ctx.roundRect(-32,-42,64,84,7);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(-28,-38,28,76);
+  ctx.fillStyle='rgba(150,220,255,0.7)';ctx.fillRect(-22,-30,44,16);
+  ctx.fillStyle='#222';[-1,1].forEach(s=>{ctx.fillRect(s*32-3,-34,7,14);ctx.fillRect(s*32-3,18,7,14)});
+  ctx.fillStyle='#ff8';ctx.fillRect(-24,-42,9,4);ctx.fillRect(15,-42,9,4);
+  ctx.fillStyle='#f22';ctx.fillRect(-24,38,9,4);ctx.fillRect(15,38,9,4);
+  if(spd>MAXS*0.4){ctx.fillStyle='#f80';[-10,0,10].forEach(o=>{ctx.beginPath();ctx.moveTo(o-4,42);ctx.lineTo(o,48+Math.random()*10);ctx.lineTo(o+4,42);ctx.fill()})}
+  ctx.restore();
+
+  // speed lines
+  if(spd>MAXS*0.7){const a=(spd/MAXS-0.7)*2;ctx.strokeStyle=`rgba(255,255,255,${a})`;ctx.lineWidth=1;for(let i=0;i<5;i++){const lx=Math.random()*W;ctx.beginPath();ctx.moveTo(lx,H*0.3);ctx.lineTo(lx,H);ctx.stroke()}}
+
+  // HUD
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,42);
+  ctx.fillStyle='#fff';ctx.font='14px monospace';
+  ctx.fillText('Score: '+Math.floor(score),12,16);
+  ctx.fillText('Speed: '+Math.floor(spd/80)+' mph',12,34);
+  ctx.font='15px serif';for(let i=0;i<lives;i++)ctx.fillText('❤️',700+i*20,18);
+  ctx.fillStyle='#fd0';ctx.font='11px monospace';ctx.fillText('HI: '+Math.floor(hi),700,36);
+  const sp=spd/MAXS;ctx.fillStyle='#333';ctx.fillRect(200,28,160,8);
+  ctx.fillStyle=sp>0.8?'#f44':sp>0.5?'#fa0':'#4f4';ctx.fillRect(200,28,160*sp,8);
+
+  if(over){
+    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#f44';ctx.font='bold 48px monospace';ctx.fillText('GAME OVER',210,260);
+    ctx.fillStyle='#fff';ctx.font='24px monospace';ctx.fillText('Score: '+Math.floor(score),300,310);
+    if(score>=hi){ctx.fillStyle='#fd0';ctx.font='bold 22px monospace';ctx.fillText('★ NEW HIGH SCORE ★',240,350)}
+    ctx.fillStyle='#aaa';ctx.font='20px monospace';ctx.fillText('Press R to restart',260,390);
+  }
+}
+
+function poly(x1,y1,w1,x2,y2,w2,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x1-w1,y1);ctx.lineTo(x1+w1,y1);ctx.lineTo(x2+w2,y2);ctx.lineTo(x2-w2,y2);ctx.fill()}
+
+let last=0;
+function loop(t){const dt=Math.min((t-last)/1000,0.05);last=t;update(dt);render();requestAnimationFrame(loop)}
+document.addEventListener('keydown',e=>{if(e.key==='r'&&over){build();px=0;spd=0;pos=0;score=0;lives=3;over=false}});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

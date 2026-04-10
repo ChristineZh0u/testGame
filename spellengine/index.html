@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Home Defense — Roguelike Prototype</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a12; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+canvas { border: 2px solid #2a2a4a; border-radius: 4px; }
+#ui-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; display: flex; justify-content: center; align-items: center;
+}
+#reward-screen, #start-screen, #death-screen {
+  display: none; pointer-events: auto; background: rgba(5,5,15,0.92);
+  border: 2px solid #4a4a8a; border-radius: 12px; padding: 30px;
+  text-align: center; color: #ddd; min-width: 600px; max-width: 800px;
+}
+#reward-screen h2, #start-screen h2, #death-screen h2 { color: #ffd700; margin-bottom: 15px; font-size: 22px; }
+.reward-options { display: flex; gap: 12px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+.reward-card {
+  background: #1a1a2e; border: 2px solid #3a3a6a; border-radius: 8px;
+  padding: 15px; width: 160px; cursor: pointer; transition: all 0.2s;
+}
+.reward-card:hover { transform: translateY(-4px); box-shadow: 0 4px 20px rgba(255,215,0,0.2); filter: brightness(1.2); }
+.reward-card .card-rarity { font-size: 9px; letter-spacing: 1px; margin-bottom: 4px; }
+.reward-card .card-emoji { font-size: 28px; margin: 6px 0; }
+.reward-card .card-type { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.reward-card .card-name { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 6px; }
+.reward-card .card-desc { font-size: 11px; color: #aaa; line-height: 1.4; }
+.reward-card .card-tags { font-size: 9px; color: #666; margin-top: 6px; }
+.type-spell .card-type { color: #ff6b6b; }
+.type-relic .card-type { color: #ffd700; }
+.type-rule .card-type { color: #6bffb8; }
+.type-upgrade .card-type { color: #44ddff; }
+.type-heal .card-type { color: #44ff44; }
+.char-option {
+  background: #1a1a2e; border: 2px solid #3a3a6a; border-radius: 8px;
+  padding: 20px; width: 180px; cursor: pointer; transition: all 0.2s;
+}
+.char-option:hover { border-color: #ffd700; transform: translateY(-4px); box-shadow: 0 4px 20px rgba(255,215,0,0.2); }
+.char-option h3 { color: #fff; margin-bottom: 8px; }
+.char-option p { font-size: 12px; color: #aaa; line-height: 1.4; }
+#death-screen button {
+  margin-top: 15px; padding: 10px 30px; background: #ffd700; color: #000;
+  border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold;
+  transition: all 0.2s;
+}
+#death-screen button:hover { background: #ffee44; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui-overlay">
+  <div id="start-screen"></div>
+  <div id="reward-screen"></div>
+  <div id="death-screen"></div>
+</div>
+<script src="data.js"></script>
+<script src="systems.js"></script>
+<script src="game.js"></script>
+<script src="render.js"></script>
+</body>
+</html>

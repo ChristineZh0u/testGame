@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stick Fight!</title>
+<style>
+*{margin:0;padding:0}body{background:#111;display:flex;flex-direction:column;align-items:center;font-family:monospace;overflow:hidden}canvas{border:2px solid #333;margin-top:5px}#hud{display:flex;gap:20px;margin-top:10px;font-size:16px;font-weight:bold;align-items:center}.p1{color:#4af}.p2{color:#f44}#msg{color:#fff;font-size:20px;margin-top:6px;height:26px;text-shadow:0 0 10px #fff}#controls{color:#666;font-size:11px;margin-top:6px;text-align:center;line-height:1.5}#round{color:gold;font-size:16px}#diff{margin-top:8px}#diff button{background:#222;color:#fff;border:1px solid #555;padding:5px 14px;margin:0 3px;cursor:pointer;font-family:monospace;border-radius:4px;font-size:12px}#diff button.active{background:#4af;color:#000}
+#shop{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10;flex-direction:column;align-items:center;justify-content:center;font-family:monospace}#shop.open{display:flex}#shop h2{color:gold;font-size:28px;margin-bottom:10px}#shop .coins{color:gold;font-size:18px;margin-bottom:15px}#shop .items{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:600px}#shop .item{background:#1a1a2e;border:2px solid #333;padding:12px;border-radius:8px;width:120px;text-align:center;cursor:pointer;transition:0.2s}#shop .item:hover{border-color:#4af;transform:scale(1.05)}#shop .item.owned{border-color:#0f0;opacity:0.6}#shop .item .nm{color:#fff;font-size:13px;margin-bottom:4px}#shop .item .ds{color:#888;font-size:10px;margin-bottom:6px}#shop .item .ct{color:gold;font-size:12px}#shop .skip{color:#888;margin-top:15px;cursor:pointer;font-size:14px}#shop .skip:hover{color:#fff}
+</style>
+</head>
+<body>
+<div id="diff"><button onclick="setDiff(0)" id="d0">Easy</button><button onclick="setDiff(1)" id="d1" class="active">Normal</button><button onclick="setDiff(2)" id="d2">Hard</button><button onclick="setDiff(3)" id="d3">Insane</button></div>
+<div id="hud"><span class="p1">YOU <span id="w1">0</span>W</span><span id="round">Round 1</span><span class="p2">CPU <span id="w2">0</span>W</span><span style="color:gold">Coins:<span id="coins">0</span></span></div>
+<div id="msg">Press SPACE to fight!</div>
+<canvas id="c" width="750" height="420"></canvas>
+<div id="controls">WASD move | F punch | G kick (air=SLAM) | R uppercut | T special | Q block (early=PARRY) | Double-tap dash | P pause</div>
+<div id="shop"><h2>CHOOSE AN UPGRADE</h2><div class="coins">Coins: <span id="shopCoins">0</span></div><div class="items" id="shopItems"></div><div class="skip" onclick="closeShop()">Press SPACE to skip</div></div>
+<script src="stickfight.js"></script>
+</body></html>
