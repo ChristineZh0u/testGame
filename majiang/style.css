@@ -491,89 +491,86 @@ body::after {
 @media (max-height: 450px),
        (max-height: 768px) and (orientation: landscape) and (hover: none) {
   body { overflow: hidden; height: 100vh; height: 100dvh; }
-  #game-container { height: 100vh; height: 100dvh; padding: 0.3vh; gap: 0; }
+  #game-container { height: 100vh; height: 100dvh; padding: 0; gap: 0; }
 
-  /* Info bars */
-  #info-bar { font-size: 1.8vh; gap: 6px; padding: 1px 6px; }
-  #info-bar #lang-btn { font-size: 1.8vh !important; }
-  #rogue-bar { font-size: 1.6vh; padding: 1px 6px; }
+  /* Hide AI hands to save space — they're face-down anyway */
+  #top-player .hand, #left-player .hand, #right-player .hand { display: none; }
 
-  /* Tiles - use vh so height is the constraint */
-  .tile { width: 6vh; height: 8.5vh; border-radius: 0.6vh; }
-  .tile .num { font-size: 4.5vh; }
-  .tile .suit-char { font-size: 2vh; }
+  /* Info bars — single compact line */
+  #info-bar { font-size: 2.8vh; gap: 8px; padding: 2px 8px; }
+  #info-bar #lang-btn { font-size: 2.8vh !important; }
+  #rogue-bar { font-size: 2.4vh; padding: 1px 8px; }
+
+  /* Player tiles — big enough to read and tap */
+  .tile { width: 9vh; height: 12.5vh; border-radius: 1vh; }
+  .tile .num { font-size: 7vh; }
+  .tile .suit-char { font-size: 3vh; }
 
   /* Player hand */
-  .hand { gap: 0.3vh; min-height: 0; flex-wrap: nowrap; }
-  #hand-row { gap: 1vh; }
-  .tile.tile-lifted { transform: translateY(-2vh); }
+  .hand { gap: 0.4vh; min-height: 0; flex-wrap: nowrap; }
+  #hand-row { gap: 1.5vh; }
+  .tile.tile-lifted { transform: translateY(-3vh); }
 
-  /* Hidden hands (AI) */
-  .hidden-hand .tile, .vertical .tile { width: 3.5vh; height: 5vh; }
-  .vertical .tile .num { font-size: 2.5vh; }
-  .vertical .tile .suit-char { font-size: 1.2vh; }
-  .vertical { gap: 0; }
+  /* Side players — just labels and melds */
+  .side-player { min-width: 2vh; gap: 0; }
 
-  /* Side players */
-  .side-player { min-width: 4vh; gap: 0.2vh; }
-
-  /* Discard pool */
-  #discard-pool { max-width: 60vw; max-height: 45vh; padding: 2px; gap: 2px; }
-  .discard-area .tile { width: 4.5vh; height: 6vh; margin-right: -0.8vh; }
-  .discard-area .tile .num { font-size: 3vh; }
-  .discard-area .tile .suit-char { font-size: 1.4vh; }
-  #tiles-remain { font-size: 1.8vh; padding: 0.3vh 1vh; }
-  #draw-pile { width: 5vh; height: 7vh; }
-  .pile-tile { width: 4.5vh; height: 6vh; }
+  /* Discard pool — take up the center */
+  #discard-pool { max-width: 65vw; max-height: 50vh; padding: 2px; gap: 1px; }
+  .discard-area .tile { width: 6vh; height: 8vh; margin-right: -1.5vh; }
+  .discard-area .tile .num { font-size: 4vh; }
+  .discard-area .tile .suit-char { font-size: 2vh; }
+  #tiles-remain { font-size: 2.5vh; padding: 0.5vh 1.5vh; }
+  #draw-pile { width: 6vh; height: 8vh; }
+  .pile-tile { width: 5.5vh; height: 7.5vh; }
 
   /* Melds */
-  .melds { margin: 0; gap: 0.3vh; }
-  .meld-group .tile { width: 4.5vh; height: 6vh; }
-  .meld-group .tile .num { font-size: 3vh; }
-  .meld-group .tile .suit-char { font-size: 1.4vh; }
-  .vertical-melds .meld-group .tile { width: 3.5vh; height: 5vh; }
-  .vertical-melds .meld-group .tile .num { font-size: 2.5vh; }
+  .melds { margin: 0; gap: 0.4vh; }
+  .meld-group .tile { width: 6vh; height: 8vh; }
+  .meld-group .tile .num { font-size: 4vh; }
+  .meld-group .tile .suit-char { font-size: 2vh; }
+  .vertical-melds .meld-group .tile { width: 4.5vh; height: 6vh; }
+  .vertical-melds .meld-group .tile .num { font-size: 3vh; }
 
   /* Action bar */
-  #action-bar { padding: 1px 4px; gap: 4px; }
-  #action-bar button { padding: 0.8vh 2vh; font-size: 2vh; border-radius: 0.6vh; }
-  #msg-bar { font-size: 1.8vh; min-height: 2vh; }
+  #action-bar { padding: 1px 4px; gap: 6px; }
+  #action-bar button { padding: 1.5vh 3vh; font-size: 3vh; border-radius: 1vh; }
+  #msg-bar { font-size: 2.5vh; min-height: 3vh; }
 
   /* Labels */
-  .player-label { font-size: 1.6vh; padding: 1px 4px; }
-  .que-tag { font-size: 1.4vh; }
+  .player-label { font-size: 2.5vh; padding: 1px 6px; }
+  .que-tag { font-size: 2.2vh; }
 
   /* Center message */
-  #center-msg { font-size: 4vh; }
+  #center-msg { font-size: 6vh; }
 
   /* Ting hint */
-  #ting-hint { font-size: 1.8vh; min-height: 2vh; }
+  #ting-hint { font-size: 2.5vh; min-height: 0; }
 
   /* Speech bubbles */
-  .speech-bubble { font-size: 1.6vh; padding: 0.3vh 1vh; }
+  .speech-bubble { font-size: 2.5vh; padding: 0.5vh 1.5vh; }
 
   /* Que select */
-  #que-select { padding: 10px 16px; width: 60vw; }
-  .que-title { font-size: 3vh; }
-  .que-counts { font-size: 2vh; }
-  .que-btn { padding: 6px 16px; font-size: 3vh; }
+  #que-select { padding: 10px 16px; width: 50vw; }
+  .que-title { font-size: 4vh; }
+  .que-counts { font-size: 2.5vh; }
+  .que-btn { padding: 8px 20px; font-size: 4vh; }
 
   /* Modal */
-  #modal-content { min-width: unset; width: 60vw; padding: 12px; font-size: 2.2vh; }
-  #modal-content button { padding: 6px 16px; font-size: 2.2vh; }
+  #modal-content { min-width: unset; width: 50vw; padding: 12px; font-size: 3vh; }
+  #modal-content button { padding: 8px 20px; font-size: 3vh; }
 
   /* Rogue */
-  .rogue-panel h1 { font-size: 6vh; }
-  .rogue-panel h2 { font-size: 4vh; }
-  .rogue-panel p { font-size: 2.2vh; }
+  .rogue-panel h1 { font-size: 8vh; }
+  .rogue-panel h2 { font-size: 5vh; }
+  .rogue-panel p { font-size: 3vh; }
   .relic-cards { flex-wrap: wrap; }
   .relic-card { width: 30vw; padding: 10px 8px; }
-  .relic-badge { font-size: 1.6vh; }
-  .relic-label { font-size: 1.2vh; }
-  .event-btn { font-size: 2.2vh; padding: 4px 12px; }
+  .relic-badge { font-size: 2.5vh; }
+  .relic-label { font-size: 2vh; }
+  .event-btn { font-size: 3vh; padding: 6px 16px; }
 
   /* HP bar */
-  .hp-visual { width: 15vw; height: 6px; }
+  .hp-visual { width: 15vw; height: 8px; }
 
   /* Compact spacing */
   #top-player, #bottom-player { padding: 0; }
