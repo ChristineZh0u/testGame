@@ -395,8 +395,8 @@ body::after {
 }
 .relic-badge:hover .relic-tooltip { display: block; }
 
-/* ===== Mobile responsive ===== */
-@media (max-width: 768px) {
+/* ===== Mobile responsive - portrait ===== */
+@media (max-width: 768px) and (orientation: portrait) {
   body { overflow: hidden; height: 100vh; height: 100dvh; }
   #game-container { height: 100vh; height: 100dvh; padding: 0.5vw; gap: 0; }
 
@@ -481,6 +481,98 @@ body::after {
 
   /* HP bar */
   .hp-visual { width: 20vw; height: 6px; }
+
+  /* Compact spacing */
+  #top-player, #bottom-player { padding: 0; }
+  #middle-row { flex: 1; min-height: 0; }
+}
+
+/* ===== Mobile responsive - landscape ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+  body { overflow: hidden; height: 100vh; height: 100dvh; }
+  #game-container { height: 100vh; height: 100dvh; padding: 0.3vh; gap: 0; }
+
+  /* Info bars */
+  #info-bar { font-size: 1.8vh; gap: 6px; padding: 1px 6px; }
+  #info-bar #lang-btn { font-size: 1.8vh !important; }
+  #rogue-bar { font-size: 1.6vh; padding: 1px 6px; }
+
+  /* Tiles - use vh so height is the constraint */
+  .tile { width: 6vh; height: 8.5vh; border-radius: 0.6vh; }
+  .tile .num { font-size: 4.5vh; }
+  .tile .suit-char { font-size: 2vh; }
+
+  /* Player hand */
+  .hand { gap: 0.3vh; min-height: 0; flex-wrap: nowrap; }
+  #hand-row { gap: 1vh; }
+  .tile.tile-lifted { transform: translateY(-2vh); }
+
+  /* Hidden hands (AI) */
+  .hidden-hand .tile, .vertical .tile { width: 3.5vh; height: 5vh; }
+  .vertical .tile .num { font-size: 2.5vh; }
+  .vertical .tile .suit-char { font-size: 1.2vh; }
+  .vertical { gap: 0; }
+
+  /* Side players */
+  .side-player { min-width: 4vh; gap: 0.2vh; }
+
+  /* Discard pool */
+  #discard-pool { max-width: 60vw; max-height: 45vh; padding: 2px; gap: 2px; }
+  .discard-area .tile { width: 4.5vh; height: 6vh; margin-right: -0.8vh; }
+  .discard-area .tile .num { font-size: 3vh; }
+  .discard-area .tile .suit-char { font-size: 1.4vh; }
+  #tiles-remain { font-size: 1.8vh; padding: 0.3vh 1vh; }
+  #draw-pile { width: 5vh; height: 7vh; }
+  .pile-tile { width: 4.5vh; height: 6vh; }
+
+  /* Melds */
+  .melds { margin: 0; gap: 0.3vh; }
+  .meld-group .tile { width: 4.5vh; height: 6vh; }
+  .meld-group .tile .num { font-size: 3vh; }
+  .meld-group .tile .suit-char { font-size: 1.4vh; }
+  .vertical-melds .meld-group .tile { width: 3.5vh; height: 5vh; }
+  .vertical-melds .meld-group .tile .num { font-size: 2.5vh; }
+
+  /* Action bar */
+  #action-bar { padding: 1px 4px; gap: 4px; }
+  #action-bar button { padding: 0.8vh 2vh; font-size: 2vh; border-radius: 0.6vh; }
+  #msg-bar { font-size: 1.8vh; min-height: 2vh; }
+
+  /* Labels */
+  .player-label { font-size: 1.6vh; padding: 1px 4px; }
+  .que-tag { font-size: 1.4vh; }
+
+  /* Center message */
+  #center-msg { font-size: 4vh; }
+
+  /* Ting hint */
+  #ting-hint { font-size: 1.8vh; min-height: 2vh; }
+
+  /* Speech bubbles */
+  .speech-bubble { font-size: 1.6vh; padding: 0.3vh 1vh; }
+
+  /* Que select */
+  #que-select { padding: 10px 16px; width: 60vw; }
+  .que-title { font-size: 3vh; }
+  .que-counts { font-size: 2vh; }
+  .que-btn { padding: 6px 16px; font-size: 3vh; }
+
+  /* Modal */
+  #modal-content { min-width: unset; width: 60vw; padding: 12px; font-size: 2.2vh; }
+  #modal-content button { padding: 6px 16px; font-size: 2.2vh; }
+
+  /* Rogue */
+  .rogue-panel h1 { font-size: 6vh; }
+  .rogue-panel h2 { font-size: 4vh; }
+  .rogue-panel p { font-size: 2.2vh; }
+  .relic-cards { flex-wrap: wrap; }
+  .relic-card { width: 30vw; padding: 10px 8px; }
+  .relic-badge { font-size: 1.6vh; }
+  .relic-label { font-size: 1.2vh; }
+  .event-btn { font-size: 2.2vh; padding: 4px 12px; }
+
+  /* HP bar */
+  .hp-visual { width: 15vw; height: 6px; }
 
   /* Compact spacing */
   #top-player, #bottom-player { padding: 0; }
