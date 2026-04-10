@@ -737,9 +737,9 @@ class MajiangGame {
     this.showMsg('⏩ 快进中... 再按一次直接结束');
   }
 
-  delay() { return this._fastMode ? 30 : this._speedUp ? 150 : 500; }
-  aiDelay() { return this._fastMode ? 30 : this._speedUp ? 100 : 800 + Math.random()*600; }
-  flyDur() { return this._fastMode ? 50 : this._speedUp ? 100 : 350; }
+  delay() { return this._fastMode ? 30 : 200; }
+  aiDelay() { return this._fastMode ? 30 : 300 + Math.random()*300; }
+  flyDur() { return this._fastMode ? 50 : 200; }
 
   toggleSpeed() {
     this._speedUp = !this._speedUp;
