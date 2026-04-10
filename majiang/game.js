@@ -627,14 +627,15 @@ class MajiangGame {
 
     // Base: pairs, triplets, sequences
     for (const [k, cnt] of Object.entries(c)) {
-      if (cnt >= 3) score += (style==='pengpeng' ? 18 : 12);
-      else if (cnt === 2) score += (style==='pengpeng' ? 8 : 6);
+      if (cnt >= 3) score += (style==='pengpeng' ? 20 : style==='aggressive' ? 14 : 12);
+      else if (cnt === 2) score += (style==='pengpeng' ? 10 : 6);
     }
 
-    // Connected tiles
+    // Connected tiles (sequences)
     for (const t of hand) {
       const s = t.suit, r = t.rank;
-      if (c[`${s}_${r+1}`]) score += (style==='qingyise' ? 4 : 3);
+      const seqBonus = style==='aggressive' ? 5 : style==='qingyise' ? 4 : 3;
+      if (c[`${s}_${r+1}`]) score += seqBonus;
       if (c[`${s}_${r+2}`]) score += 1;
     }
 
@@ -642,41 +643,56 @@ class MajiangGame {
     const suitCounts = { wan:0, tiao:0, tong:0 };
     hand.forEach(t => suitCounts[t.suit]++);
     const maxSuit = Math.max(...Object.values(suitCounts));
-    const qysBonus = style==='qingyise' ? 2 : 1;
+    const qysBonus = style==='qingyise' ? 3 : 1;
     if (maxSuit === hand.length) score += 20 * qysBonus;
     else if (maxSuit >= hand.length - 1) score += 12 * qysBonus;
     else if (maxSuit >= hand.length - 2) score += 6 * qysBonus;
 
+    // qingyise: heavily penalize minority suits
+    if (style === 'qingyise') {
+      const mainSuit = Object.entries(suitCounts).sort((a,b)=>b[1]-a[1])[0][0];
+      if (discarded.suit !== mainSuit) score += 8; // bonus for discarding non-main suit
+    }
+
     // Peng-peng-hu potential
     const trips = Object.values(c).filter(v => v >= 3).length;
     const meldTrips = melds.filter(m => m.type !== 'chi').length;
-    if (trips + meldTrips >= 3) score += (style==='pengpeng' ? 15 : 8);
+    if (trips + meldTrips >= 3) score += (style==='pengpeng' ? 20 : 8);
 
-    // Ting bonus
+    // Ting bonus — aggressive style rushes to ting
     if (hand.length % 3 === 1 && isTingPai(hand, melds)) {
-      score += (style==='aggressive' ? 50 : 40);
-      score += getTingTiles(hand, melds).length * 5;
+      score += (style==='aggressive' ? 60 : 40);
+      const tingCount = getTingTiles(hand, melds).length;
+      score += tingCount * (style==='aggressive' ? 8 : 5);
     }
 
-    // Penalize discarding useful tiles
-    const dk = tileKey(discarded);
-    if (origCounts[dk] >= 2) score -= 4;
+    // Aggressive: prefer discarding isolated tiles fast, keep anything useful
+    if (style === 'aggressive') {
+      const dk = tileKey(discarded);
+      const dr = discarded.rank;
+      // Bonus for throwing away edge tiles that aren't connected
+      if ((dr === 1 || dr === 9) && origCounts[dk] === 1) score += 6;
+      // Penalize breaking pairs/triplets more
+      if (origCounts[dk] >= 2) score -= 8;
+    } else {
+      // Penalize discarding useful tiles
+      const dk = tileKey(discarded);
+      if (origCounts[dk] >= 2) score -= 4;
+    }
 
     // Middle tiles
     for (const t of hand) {
-      if (t.rank >= 3 && t.rank <= 7) score += 0.5;
+      if (t.rank >= 3 && t.rank <= 7) score += (style==='aggressive' ? 1 : 0.5);
     }
 
     // Smart AI: avoid feeding dangerous tiles (scales with _aiSmartness)
-    const smartness = this._aiSmartness || 0;
+    // Aggressive style ignores defense
+    const smartness = (style === 'aggressive') ? 0 : (this._aiSmartness || 0);
     if (smartness > 0 && playerIdx) {
-      // Check if discarded tile's suit is scarce in other players' discards (they might want it)
       const ds = discarded.suit;
       let suitInDiscards = 0;
       for (let i=0;i<4;i++) suitInDiscards += this.discards[i].filter(t=>t.suit===ds).length;
-      // If very few of this suit discarded, others might be collecting it — risky to discard
       if (suitInDiscards < 3) score -= 5 * smartness;
-      // Avoid discarding tiles adjacent to recently discarded tiles (someone might be waiting)
       if (this.lastDiscard && this.lastDiscard.suit === ds) {
         const diff = Math.abs(this.lastDiscard.rank - discarded.rank);
         if (diff <= 2) score -= 3 * smartness;
@@ -874,10 +890,24 @@ class MajiangGame {
       const p=(from+i)%4;
       if (actions[p]?.gang) { this.doMeld(p,'gang'); return; }
     }
-    // 3. Check peng (seat order)
+    // 3. Check peng (seat order) — style-dependent
     for (let i=1;i<=3;i++) {
       const p=(from+i)%4;
-      if (actions[p]?.peng) { this.doMeld(p,'peng'); return; }
+      if (!actions[p]?.peng) continue;
+      const style = this.aiStyle(p);
+      // aggressive: always peng
+      if (style === 'aggressive') { this.doMeld(p,'peng'); return; }
+      // qingyise: only peng if same suit as main suit
+      if (style === 'qingyise') {
+        const sc = {wan:0,tiao:0,tong:0};
+        this.hands[p].forEach(t=>sc[t.suit]++);
+        const main = Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][0];
+        if (this.lastDiscard && this.lastDiscard.suit === main) { this.doMeld(p,'peng'); return; }
+        continue; // skip peng of off-suit
+      }
+      // balanced: skip peng 20% of the time to keep flexibility
+      if (style === 'balanced' && Math.random() < 0.2) continue;
+      this.doMeld(p,'peng'); return;
     }
     let next=(from+1)%4, tries=0;
     while (this.won[next]&&tries<4) { next=(next+1)%4; tries++; }
