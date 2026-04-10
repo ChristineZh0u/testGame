@@ -610,6 +610,12 @@ class MajiangGame {
 
     // No talking when ting — don't give away info
 
+    // Difficulty: on lower floors, AI sometimes makes mistakes
+    if (this._aiMistakeRate && Math.random() < this._aiMistakeRate) {
+      const pool = hand.filter(t => t.suit !== qs);
+      best = pool[Math.floor(Math.random() * pool.length)] || best;
+    }
+
     this.discard(p, best || hand[0]);
   }
 

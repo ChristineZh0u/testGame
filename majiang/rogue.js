@@ -279,6 +279,9 @@ class RogueGame {
     document.getElementById('name-2').textContent = `${ops[1].emoji}${ops[1].name}`;
     document.getElementById('name-3').textContent = `${ops[2].emoji}${ops[2].name}`;
     this.updateUI();
+    // Difficulty scaling: AI gets smarter each floor
+    game._aiSmartness = Math.max(0, (this.floor - 1) / 3);  // 0 at 1F, ~0.67 at 3F, ~2 at 7F
+    game._aiMistakeRate = Math.max(0, 0.4 - this.floor * 0.05); // 40% mistakes at 1F, 0% at 8F
     game.start();
   }
 
